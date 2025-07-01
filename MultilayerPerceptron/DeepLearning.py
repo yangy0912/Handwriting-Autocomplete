@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.f2py.auxfuncs import throw_error
 
 # Constants
 input_size: int = 784
@@ -38,10 +39,19 @@ def initialize_biases():
     np.savez('./Model/biases.npz', b1=initial_bias1,
              b2=initial_bias2, b3=initial_bias3, b4=initial_bias4, bO=initial_output_bias)
 
-initialize_weights()
+def batch_training(low, high):
+    if low >= high:
+        throw_error('low must be smaller than high')
+
+    for batch in range(low, high + 1, 10):
+        for index in range(0, 10):
+            print(str(batch + index))
+        print("next row")
+
+batch_training(11, 120)
 
 '''
-
+initialize_weights()
 weights = np.load('./Model/weights.npz')
 print(np.average(weights['w1']))
 print(np.average(weights['w2']))
