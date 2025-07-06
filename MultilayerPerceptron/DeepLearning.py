@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from mathHelper import *
 from numpy.f2py.auxfuncs import throw_error
 
 # Constants
@@ -39,31 +41,111 @@ def initialize_biases():
     np.savez('./Model/biases.npz', b1=initial_bias1,
              b2=initial_bias2, b3=initial_bias3, b4=initial_bias4, bO=initial_output_bias)
 
+
 def batch_training(low, high):
     if low >= high:
         throw_error('low must be smaller than high')
 
+    print("Loading weights and biases...")
+    # Initialize from Data
+    training_df = pd.read_csv('../A_Z Handwritten Data/train_df_shuffled.csv')
+    weights = np.load('./Model/weights.npz')
+    biases = np.load('./Model/biases.npz')
+
+    b1 = biases['b1']
+    b2 = biases['b2']
+    b3 = biases['b3']
+    b4 = biases['b4']
+    bO = biases['bO']
+
+    w1 = weights['w1']
+    w2 = weights['w2']
+    w3 = weights['w3']
+    w4 = weights['w4']
+    op = weights['op']
+
+    percentage = set()
+    print("Training...")
+    # Iterate through range in batches of 10
     for batch in range(low, high + 1, 10):
         for index in range(0, 10):
-            print(str(batch + index))
-        print("next row")
+            i = batch + index
+            progress = (i - low) / (high - low)
+            progress_percent = np.round(progress * 100)
+            if progress_percent not in percentage:
+                percentage.add(progress_percent)
+                print("Progress: " + str(progress_percent) + "%")
+            row = training_df.iloc[i]
+            label = row["0"]
+            pixels = row.iloc[2:].to_numpy()
+            squished_pixels = pixels / 255.0
 
-batch_training(11, 120)
+            # Forward pass
+            z1 = np.matmul(pixels, w1) + b1
+            a1 = sigmoid(z1)
 
-'''
-initialize_weights()
-weights = np.load('./Model/weights.npz')
-print(np.average(weights['w1']))
-print(np.average(weights['w2']))
-print(np.average(weights['w3']))
-print(np.average(weights['w4']))
-print(np.average(weights['op']))
+            z2 = np.matmul(a1, w2) + b2
+            a2 = relu(z2)
 
-initialize_biases()
-biases = np.load('./Model/biases.npz')
-print(np.average(biases['b1']))
-print(np.average(biases['b2']))
-print(np.average(biases['b3']))
-print(np.average(biases['b4']))
-print(np.average(biases['bO']))
-'''
+            z3 = np.matmul(a2, w3) + b3
+            a3 = relu(z3)
+
+            z4 = np.matmul(a3, w4) + b4
+            a4 = relu(z4)
+
+            z5 = np.matmul(a4, op) + bO
+            output = softmax(z5)
+
+            # Back Propagation
+            dz5 = difference(output, label)
+            d_op = np.matmul(a4.T, dz5)
+
+            d_bO = np.sum(dz5, axis=0)
+
+            # Layer 4
+            da4 = np.matmul(dz5, op.T)
+            dz4 = da4 * relu_deriv(z4)
+            d_w4 = np.matmul(a3.T, dz4)
+            d_b4 = np.sum(dz4, axis=0)
+
+            # Layer 3
+            da3 = np.matmul(dz4, w4.T)
+            dz3 = da3 * relu_deriv(z3)
+            d_w3 = np.matmul(a2.T, dz3)
+            d_b3 = np.sum(dz3, axis=0)
+
+            # Layer 2
+            da2 = np.matmul(dz3, w3.T)
+            dz2 = da2 * relu_deriv(z2)
+            d_w2 = np.matmul(a1.T, dz2)
+            d_b2 = np.sum(dz2, axis=0)
+
+            # Layer 1
+            da1 = np.matmul(dz2, w2.T)
+            dz1 = da1 * sigmoid_deriv(z1)
+            d_w1 = np.matmul(pixels.reshape((784, 1)), dz1)
+            d_b1 = np.sum(dz1, axis=0)
+
+            # Output layer
+            op -= learning_rate * d_op
+            bO -= learning_rate * d_bO
+
+            # Layer 4
+            w4 -= learning_rate * d_w4
+            b4 -= learning_rate * d_b4
+
+            # Layer 3
+            w3 -= learning_rate * d_w3
+            b3 -= learning_rate * d_b3
+
+            # Layer 2
+            w2 -= learning_rate * d_w2
+            b2 -= learning_rate * d_b2
+
+            # Layer 1
+            w1 -= learning_rate * d_w1
+            b1 -= learning_rate * d_b1
+
+batch_training(1, 10000)
+
+

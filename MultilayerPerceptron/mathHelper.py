@@ -3,26 +3,28 @@ import numpy as np
 def relu(x):
     return np.maximum(0, x)
 
-def relu_derivative(x):
-    if x <= 0:
-        return 0
-    else:
-        return 1
+def relu_deriv(x):
+    return (x > 0).astype(float)
 
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return np.where(
+        x >= 0,
+        1 / (1 + np.exp(-x)),
+        np.exp(x) / (1 + np.exp(x))
+    )
 
-def sigmoid_derivative(x):
+def sigmoid_deriv(x):
     return sigmoid(x) * (1 - sigmoid(x))
 
-def squared_difference(result, classification):
-    classification_arr = np.zeros(len(result))
-    classification_arr[classification] = 1
-    return np.square(np.sum(result - classification_arr))
+def difference(result, classification):
+    classification_arr = np.zeros(result.shape)
+    classification_arr[0, classification - 1] = 1
+    return result - classification_arr
 
 def softmax(x):
-    e_x = np.exp(x - np.max(x))  # stabilize
-    return e_x / e_x.sum()
+    x_max = np.max(x, axis=1, keepdims=True)
+    exp_x = np.exp(x - x_max)
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
 def find_max(arr):
     max = -np.inf
