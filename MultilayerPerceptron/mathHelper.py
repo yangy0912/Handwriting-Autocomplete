@@ -7,11 +7,9 @@ def relu_deriv(x):
     return (x > 0).astype(float)
 
 def sigmoid(x):
-    return np.where(
-        x >= 0,
-        1 / (1 + np.exp(-x)),
-        np.exp(x) / (1 + np.exp(x))
-    )
+    x = np.clip(x, -500, 500)
+    return 1 / (1 + np.exp(-x))
+
 
 def sigmoid_deriv(x):
     return sigmoid(x) * (1 - sigmoid(x))

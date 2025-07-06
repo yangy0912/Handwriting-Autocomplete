@@ -21,6 +21,7 @@ fourth_layer_neurons = np.zeros((hidden_layer_size[3], 1))
 output_neurons = np.zeros((output_size, 1))
 
 def initialize_weights():
+    print("Initializing weights")
     scale = 1
     initial_weight1 = np.random.uniform(low=-1, high=1, size=(784, hidden_layer_size[0])) * scale
     initial_weight2 = np.random.uniform(low=-1, high=1, size=(64, hidden_layer_size[1])) * scale
@@ -32,6 +33,7 @@ def initialize_weights():
              w4=initial_weight4, op=initial_output_weight)
 
 def initialize_biases():
+    print("Initializing biases")
     scale = 1
     initial_bias1 = np.zeros((1, bias[0])) * scale
     initial_bias2 = np.zeros((1, bias[1])) * scale
@@ -145,7 +147,18 @@ def batch_training(low, high):
             # Layer 1
             w1 -= learning_rate * d_w1
             b1 -= learning_rate * d_b1
+    print("Finished training")
+    # Save weights and biases
+    np.savez('./Model/weights.npz', w1=w1, w2=w2, w3=w3, w4=w4, op=op)
+    np.savez('./Model/biases.npz', b1=b1, b2=b2, b3=b3, b4=b4, bO=bO)
+    print("Saved weights and biases")
 
-batch_training(1, 10000)
+# Train
+def train():
+    initialize_weights()
+    initialize_biases()
+    batch_training(0, 290000)
 
+initialize_weights()
+initialize_biases()
 
